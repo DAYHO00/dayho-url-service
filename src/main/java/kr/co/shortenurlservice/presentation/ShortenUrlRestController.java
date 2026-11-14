@@ -1,9 +1,10 @@
+
 package kr.co.shortenurlservice.presentation;
 
 import jakarta.validation.Valid;
 import kr.co.shortenurlservice.application.SimpleShortenUrlService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
+
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,45 +14,68 @@ import java.net.URI;
 @RestController
 public class ShortenUrlRestController {
 
-    private final SimpleShortenUrlService simpleShortenUrlService;
+    private final SimpleShortenUrlService service;
 
-    @Autowired
-    public ShortenUrlRestController(SimpleShortenUrlService simpleShortenUrlService) {
-        this.simpleShortenUrlService = simpleShortenUrlService;
+    public ShortenUrlRestController(SimpleShortenUrlService service) {
+        this.service = service;
     }
 
-    @RequestMapping(value = "/shortenUrl", method = RequestMethod.POST)
-    public ResponseEntity<?> createShortenUrl(
-            @Valid @RequestBody ShortenUrlCreateRequestDto shortenUrlCreateRequestDto) {
-
-        ShortenUrlCreateResponseDto responseDto =
-                simpleShortenUrlService.generateShortenUrl(shortenUrlCreateRequestDto);
-
-        return ResponseEntity.ok(responseDto);
+    // 단축 URL 생성
+    @PostMapping("/shortenUrl")
+    public ResponseEntity<ShortenUrlCreateResponseDto> createShortenUrl(
+            @Valid @RequestBody ShortenUrlCreateRequestDto request
+    ) {
+        return ResponseEntity.ok(service.generateShortenUrl(request));
     }
 
-    @RequestMapping(
-            value = "/{shortenUrlKey:[a-zA-Z0-9]{8}}",
-            method = RequestMethod.GET
-    )
-    public ResponseEntity<?> redirectShortenUrl(@PathVariable String shortenUrlKey) {
+    // 단축 URL 접속
+    @GetMapping("/{shortenUrlKey:[a-zA-Z0-9]{8}}")
+    public ResponseEntity<Void> redirectShortenUrl(
+            @PathVariable String shortenUrlKey
+    ) {
+        String originalUrl =
+                service.getOriginalUrlByShortenUrlKey(shortenUrlKey);
 
-        String originalUrl = simpleShortenUrlService.getOriginalUrlByShortenUrlKey(shortenUrlKey);
-
-        URI redirectUrl = URI.create(originalUrl);
-
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setLocation(redirectUrl);
-
-        return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
+        return ResponseEntity
+                .status(HttpStatus.FOUND)
+                .location(URI.create(originalUrl))
+                .cacheControl(CacheControl.noStore())
+                .build();
     }
 
-    @RequestMapping(value = "/shortenUrl/{shortenUrlKey}", method = RequestMethod.GET)
-    public ResponseEntity<?> getShortenUrlInformation(@PathVariable String shortenUrlKey) {
+    // 단축 URL 상세 조회
+    @GetMapping("/shortenUrl/{shortenUrlKey}")
+    public ResponseEntity<ShortenUrlInformationDto> getShortenUrlInformation(
+            @PathVariable String shortenUrlKey
+    ) {
+        return ResponseEntity.ok(
+                service.getShortenUrlInformationByShortenUrlKey(shortenUrlKey)
+        );
+    }
 
-        ShortenUrlInformationDto informationDto =
-                simpleShortenUrlService.getShortenUrlInformationByShortenUrlKey(shortenUrlKey);
+    // 전체 조회 + 페이지네이션 + 검색
+    @GetMapping("/api/urls")
+    public ResponseEntity<ShortenUrlListResponseDto> getShortenUrls(
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(
+                service.getShortenUrls(keyword, page, size)
+        );
+    }
 
-        return ResponseEntity.ok(informationDto);
+    // 사용 중지 및 재개
+    @PatchMapping("/api/urls/{shortenUrlKey}/status")
+    public ResponseEntity<Void> updateStatus(
+            @PathVariable String shortenUrlKey,
+            @Valid @RequestBody ShortenUrlStatusRequestDto request
+    ) {
+        service.updateShortenUrlStatus(
+                shortenUrlKey,
+                request.active()
+        );
+
+        return ResponseEntity.noContent().build();
     }
 }

@@ -7,11 +7,22 @@ public class ShortenUrl {
     private String originalUrl;
     private String shortenUrlKey;
     private Long redirectCount;
+    private boolean active;
 
     public ShortenUrl(String originalUrl, String shortenUrlKey) {
+        this(originalUrl, shortenUrlKey, 0L, true);
+    }
+
+    public ShortenUrl(
+            String originalUrl,
+            String shortenUrlKey,
+            Long redirectCount,
+            boolean active
+    ) {
         this.originalUrl = originalUrl;
         this.shortenUrlKey = shortenUrlKey;
-        this.redirectCount = 0L;
+        this.redirectCount = redirectCount;
+        this.active = active;
     }
 
     public String getOriginalUrl() {
@@ -26,24 +37,23 @@ public class ShortenUrl {
         return redirectCount;
     }
 
-    public static String generateShortenUrlKey(){
-
-        String base56Characters = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";
-
-        Random random = new Random();
-        StringBuilder shortenUrlKey = new StringBuilder();
-
-        for(int count=0; count<8;count++){
-
-            int base56CharactersIndex = random.nextInt(0,base56Characters.length());
-            char base56Character = base56Characters.charAt(base56CharactersIndex);
-            shortenUrlKey.append(base56Character);
-        }
-
-        return shortenUrlKey.toString();
+    public boolean isActive() {
+        return active;
     }
 
-    public void increaseRedirectCount(){
-        this.redirectCount=this.redirectCount+1;
+    public static String generateShortenUrlKey() {
+
+        String characters =
+                "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";
+
+        Random random = new Random();
+        StringBuilder key = new StringBuilder();
+
+        for (int i = 0; i < 8; i++) {
+            int index = random.nextInt(characters.length());
+            key.append(characters.charAt(index));
+        }
+
+        return key.toString();
     }
 }
