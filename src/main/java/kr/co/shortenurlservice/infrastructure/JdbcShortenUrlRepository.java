@@ -1,3 +1,4 @@
+
 package kr.co.shortenurlservice.infrastructure;
 
 import kr.co.shortenurlservice.domain.ShortenUrl;
@@ -65,6 +66,7 @@ public class JdbcShortenUrlRepository implements ShortenUrlRepository {
             int limit,
             int offset
     ) {
+
         String sql = """
                 SELECT *
                 FROM shorten_urls
@@ -123,5 +125,25 @@ public class JdbcShortenUrlRepository implements ShortenUrlRepository {
                 """;
 
         return jdbcTemplate.update(sql, key) == 1;
+    }
+
+    // 원본 URL 변경
+    @Override
+    public boolean updateOriginalUrl(
+            String key,
+            String originalUrl
+    ) {
+
+        String sql = """
+                UPDATE shorten_urls
+                SET original_url = ?
+                WHERE shorten_url_key = ?
+                """;
+
+        return jdbcTemplate.update(
+                sql,
+                originalUrl,
+                key
+        ) == 1;
     }
 }

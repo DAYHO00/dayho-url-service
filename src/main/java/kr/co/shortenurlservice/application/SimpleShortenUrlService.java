@@ -27,9 +27,9 @@ public class SimpleShortenUrlService {
     public ShortenUrlCreateResponseDto generateShortenUrl(
             ShortenUrlCreateRequestDto request
     ) {
+
         String originalUrl = request.getOriginalUrl();
 
-        // 단축 코드 중복 발생 시 최대 5번 재생성
         for (int attempt = 0; attempt < 5; attempt++) {
 
             String key = ShortenUrl.generateShortenUrlKey();
@@ -40,7 +40,7 @@ public class SimpleShortenUrlService {
                 return new ShortenUrlCreateResponseDto(shortenUrl);
 
             } catch (DuplicateKeyException e) {
-                // 단축 코드 충돌 시 재시도
+                // 단축 코드 충돌 시 재생성
             }
         }
 
@@ -54,6 +54,7 @@ public class SimpleShortenUrlService {
     public ShortenUrlInformationDto getShortenUrlInformationByShortenUrlKey(
             String key
     ) {
+
         ShortenUrl shortenUrl = findByKey(key);
 
         return new ShortenUrlInformationDto(
@@ -68,7 +69,6 @@ public class SimpleShortenUrlService {
 
         ShortenUrl shortenUrl = findByKey(key);
 
-        // 중지된 URL은 리다이렉트 차단
         if (!shortenUrl.isActive()) {
             throw new ResponseStatusException(
                     HttpStatus.GONE,
@@ -76,7 +76,6 @@ public class SimpleShortenUrlService {
             );
         }
 
-        // DB에서 클릭 횟수 증가
         boolean updated =
                 shortenUrlRepository.increaseRedirectCount(key);
 
@@ -96,7 +95,7 @@ public class SimpleShortenUrlService {
             int page,
             int size
     ) {
-        // 페이지네이션 입력값 검증
+
         if (page < 0 || size < 1 || size > 100) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -116,17 +115,14 @@ public class SimpleShortenUrlService {
             );
         }
 
-        // 원본 URL 검색 및 페이지네이션 적용
         List<ShortenUrl> urls = shortenUrlRepository.findAll(
                 searchKeyword,
                 size,
                 (int) offsetValue
         );
 
-        // 검색 조건에 해당하는 전체 개수
         long total = shortenUrlRepository.count(searchKeyword);
 
-        // Domain 객체를 응답 DTO로 변환
         List<ShortenUrlListResponseDto.ShortenUrlItemDto> items =
                 urls.stream()
                         .map(url ->
@@ -156,10 +152,31 @@ public class SimpleShortenUrlService {
             String key,
             boolean active
     ) {
-        // 중지된 URL도 조회할 수 있어야 재개 가능
+
         findByKey(key);
 
         shortenUrlRepository.updateStatus(key, active);
+    }
+
+    // 원본 URL 변경 (신규)
+    public void updateOriginalUrl(
+            String key,
+            String originalUrl
+    ) {
+
+        findByKey(key);
+
+        boolean updated = shortenUrlRepository.updateOriginalUrl(
+                key,
+                originalUrl
+        );
+
+        if (!updated) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "원본 URL을 변경할 수 없습니다."
+            );
+        }
     }
 
     // 단축 URL 존재 여부 확인
@@ -175,7 +192,6 @@ public class SimpleShortenUrlService {
             );
         }
 
-        // 활성 상태 검사는 여기서 하지 않음
         return shortenUrl;
     }
 }

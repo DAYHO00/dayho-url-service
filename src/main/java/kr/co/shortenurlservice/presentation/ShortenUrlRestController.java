@@ -25,7 +25,10 @@ public class ShortenUrlRestController {
     public ResponseEntity<ShortenUrlCreateResponseDto> createShortenUrl(
             @Valid @RequestBody ShortenUrlCreateRequestDto request
     ) {
-        return ResponseEntity.ok(service.generateShortenUrl(request));
+
+        return ResponseEntity.ok(
+                service.generateShortenUrl(request)
+        );
     }
 
     // 단축 URL 접속
@@ -33,6 +36,7 @@ public class ShortenUrlRestController {
     public ResponseEntity<Void> redirectShortenUrl(
             @PathVariable String shortenUrlKey
     ) {
+
         String originalUrl =
                 service.getOriginalUrlByShortenUrlKey(shortenUrlKey);
 
@@ -48,6 +52,7 @@ public class ShortenUrlRestController {
     public ResponseEntity<ShortenUrlInformationDto> getShortenUrlInformation(
             @PathVariable String shortenUrlKey
     ) {
+
         return ResponseEntity.ok(
                 service.getShortenUrlInformationByShortenUrlKey(shortenUrlKey)
         );
@@ -60,6 +65,7 @@ public class ShortenUrlRestController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
+
         return ResponseEntity.ok(
                 service.getShortenUrls(keyword, page, size)
         );
@@ -71,9 +77,25 @@ public class ShortenUrlRestController {
             @PathVariable String shortenUrlKey,
             @Valid @RequestBody ShortenUrlStatusRequestDto request
     ) {
+
         service.updateShortenUrlStatus(
                 shortenUrlKey,
                 request.active()
+        );
+
+        return ResponseEntity.noContent().build();
+    }
+
+    // 원본 URL 변경 (신규)
+    @PatchMapping("/api/urls/{shortenUrlKey}/original-url")
+    public ResponseEntity<Void> updateOriginalUrl(
+            @PathVariable String shortenUrlKey,
+            @Valid @RequestBody ShortenUrlUpdateRequestDto request
+    ) {
+
+        service.updateOriginalUrl(
+                shortenUrlKey,
+                request.originalUrl()
         );
 
         return ResponseEntity.noContent().build();
