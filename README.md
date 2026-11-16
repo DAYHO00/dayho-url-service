@@ -3,7 +3,8 @@
 Spring Boot 기반의 **단축 URL 생성 및 관리 서비스**로, 왕·신하·역적이 참여하는 역할 기반 추리 게임 **KingDom**을 운영하기 위해 개발한 프로젝트입니다.
 
 참가자별 고유한 단축 URL을 발급하고, 게임 진행에 따라 연결된 노션 페이지를 변경하거나 링크를 비활성화할 수 있습니다.
-![Uploading image.png…]()
+<img width="1072" height="514" alt="image" src="https://github.com/user-attachments/assets/f6a9ddf6-5788-4aeb-8dec-124c62e01af8" />
+
 
 
 ## 1. 프로젝트 개요
